@@ -111,8 +111,8 @@ class ChatServer:
                     print("sending " + msg.decode() + " to "
                           + str(sock.getpeername()))
                     sock.send(msg)
-
-            for sock in exceptional:
+messup!!!!!!!
+asfd adf asdf             for sock in exceptional:
                 print("handling exceptional condition for "
                       + sock.getpeername())
                 inputs.remove(sock)
