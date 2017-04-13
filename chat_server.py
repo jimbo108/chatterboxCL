@@ -47,7 +47,7 @@ class ChatServer:
                 continue
             try:
                 self._sock.setsockopt(socket.SOL_SOCKET,
-                                                     socket.SO_REUSEADDR, 1)
+                                      socket.SO_REUSEADDR, 1)
             except socket.error as msg:
                 print("socket.error: " + str(msg))
                 self._sock = None
