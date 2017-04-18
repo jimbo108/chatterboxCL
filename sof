@@ -1,0 +1,12 @@
+Just changed code to send to all in self._conn_list EXCEPT the sender.
+Currently the server is dropping all connections in the writable loop
+
+SCREEN RETAINS INFORMATION ABOUT LAST addstr() what a headache
+
+Got everything working with prompt_tryout, hashing seems to work
+Working on the main_server, specifically pickling a Connection
+object and sending it to the client.  It includes an attribute,
+you_host_it, which tells the client whether or not they need to
+open a new server for the seed (chatroom).  This is not implemented
+on chat_client yet, and main_server is currently not functional and
+incomplete.
