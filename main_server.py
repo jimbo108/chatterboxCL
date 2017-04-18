@@ -15,7 +15,7 @@ UTF_8 = 'utf-8'
 
 class Connection:
 
-    def __init__(self, port, address=None you_host_it=True):
+    def __init__(self, port, address=None, you_host_it=True):
         self.address = address
         self.port = port
         self.you_host_it = you_host_it
