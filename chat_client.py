@@ -1,5 +1,7 @@
 import socket
 import sys
+import _thread
+
 MAX_PORT_NUMBER = 65535
 PORT = '3490'
 DEFAULT_PORT = 3490
@@ -41,13 +43,20 @@ class ChatClient:
             print("client failed to connect")
             sys.exit(1)
 
+    # TODO: It's very late, but I need to rethink this badly
     def hold_conversation(self):
-
+        self._sock.setblocking(0)
+        _thread.start_new_thread(self.listen_conversation, ())
         while 1:
             client_input = input('-->)')
             self._sock.send(client_input.encode())
 
-            # wait for user input to be echoed
-            echoed_msg = self._sock.recv(1024)
-            echoed_msg = echoed_msg.decode()
-            print(echoed_msg)
+    def listen_conversation(self):
+        while 1:
+            try:
+                msg = self._sock.recv(1024)
+            except socket.error:
+                pass
+            else:
+                msg = msg.decode()
+                print('-->' + msg)

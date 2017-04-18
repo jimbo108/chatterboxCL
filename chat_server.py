@@ -28,6 +28,7 @@ class ChatServer:
         self._host = None
         self._sock = None
         self._running_uid = 0
+        self._conn_list = []
 
     def run(self):
         self.setup_socket_and_listen()
@@ -69,61 +70,70 @@ class ChatServer:
     # UNFINISHED
     def accept_conns_and_serve_msgs(self):
         msg_queues = {}
-        inputs = [self._sock]
+        self._conn_list.append(self._sock)  # this isn't great but it seems
+                                            # cleaner than the alternatives
         outputs = []
 
         while 1:
-            readable, writable, exceptional = select.select(inputs, outputs,
-                                                            inputs)
+            readable, writable, exceptional = select.select(self._conn_list,
+                                                            self._conn_list,
+                                                            self._conn_list)
+            if self._sock in readable:
+                conn, address = self._sock.accept()
+                print("new connection from" + str(address))
+                conn.setblocking(0)
+                self._conn_list.append(conn)
+
+                msg_queues[conn] = queue.Queue()
+
             for sock in readable:
-
                 if sock is self._sock:
-                    conn, address = sock.accept()
-                    print("new connection from " + str(address))
-                    conn.setblocking(0)
-                    inputs.append(conn)
-
-                    msg_queues[conn] = queue.Queue()
+                    continue
                 else:
                     msg = sock.recv(1024)
+
                     if msg:
-                        msg_queues[sock].put(msg)
-                        if sock not in outputs:
-                            outputs.append(sock)
+
+                        keys = msg_queues.keys()
+                        for key in keys:
+                            if key is sock:
+                                continue
+                            else:
+                                msg_queues[key].put(msg)
+                                if key not in outputs:
+                                    outputs.append(key)
                     else:
-                        print("removing " + str(sock.getpeername()) + "from"
-                              + " inputs")
-                        if sock in outputs:
-                            outputs.remove(sock)
-                        inputs.remove(sock)
+                        self._conn_list.remove(sock)
                         sock.close()
 
-                        del msg_queues[sock]
-
             for sock in writable:
-                try:
-                    msg = msg_queues[sock].get_nowait()
-                except queue.Empty:
-                    print(str(sock.getpeername()) + "is empty, removing from "
-                                               "outputs")
-                    outputs.remove(sock)
+                if sock is self._sock:
+                    continue
                 else:
-                    print("sending " + msg.decode() + " to "
-                          + str(sock.getpeername()))
-                    sock.send(msg)
+                    try:
+                        msg = msg_queues[sock].get_nowait()
+                    except queue.Empty:
+                        pass
+                        #  print(str(sock.getpeername()) + "is empty, removing "
+                        #                                  + "from outputs")
+                        #  self._conn_list.remove(sock)  # EXPERIMENTAL
+                    else:
+                        print("sending " + msg.decode() + " to "
+                              + str(sock.getpeername()))
+                        sock.send(msg)
 
             for sock in exceptional:
                 print("handling exceptional condition for "
                       + sock.getpeername())
-                inputs.remove(sock)
-                if sock in outputs:
-                    outputs.remove(sock)
-                sock.close()
+                if sock is self._sock:
+                    print("exceptional condition on server socket, quitting")
+                    sys.exit(1)
+                else:
+                    self._conn_list.remove(sock)
+                    sock.close()
+                    del msg_queues[sock]
 
-                del msg_queues[sock]
 
-
-                        # pymotw uses inputs instead of single self._socket
 
 
 
